@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 — Ошибка! Не нажимать!</title>
+    <!-- Подключение Tailwind CSS для адаптивной верстки и стилизации -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключение шрифтов для атмосферы аварийной панели -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Базовые настройки шрифтов и запрет случайного выделения/скролла при взрыве */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #09090b;
+            color: #f4f4f5;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .font-mono-tech {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Предупреждающие черно-желтые полосы по краям панели */
+        .hazard-stripes {
+            background: repeating-linear-gradient(
+                -45deg,
+                #eab308,
+                #eab308 16px,
+                #18181b 16px,
+                #18181b 32px
+            );
+        }
+
+        /* Стилизация объемной красной кнопки */
+        .red-button-wrapper {
+            background: radial-gradient(circle at center, #27272a 0%, #09090b 100%);
+            box-shadow: 
+                inset 0 4px 12px rgba(0, 0, 0, 0.9),
+                0 0 0 4px #3f3f46,
+                0 15px 35px rgba(0, 0, 0, 0.8);
+        }
+
+        .big-red-btn {
+            background: radial-gradient(circle at 35% 30%, #ff5252 0%, #dc2626 45%, #7f1d1d 100%);
+            box-shadow: 
+                0 14px 0 #450a0a,
+                0 22px 30px rgba(0, 0, 0, 0.85),
+                0 0 45px rgba(220, 38, 38, 0.45),
+                inset 0 4px 10px rgba(255, 255, 255, 0.45);
+            transition: transform 0.08s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.08s ease, filter 0.2s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .big-red-btn:hover {
+            filter: brightness(1.08);
+            box-shadow: 
+                0 14px 0 #450a0a,
+                0 22px 35px rgba(0, 0, 0, 0.9),
+                0 0 65px rgba(239, 68, 68, 0.75),
+                inset 0 4px 12px rgba(255, 255, 255, 0.6);
+        }
+
+        .big-red-btn:active {
+            transform: translateY(11px);
+            box-shadow: 
+                0 3px 0 #450a0a,
+                0 8px 15px rgba(0, 0, 0, 0.9),
+                0 0 80px rgba(239, 68, 68, 0.95),
+                inset 0 2px 6px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Анимация пульсации индикатора тревоги */
+        @keyframes pulse-danger {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.45; transform: scale(0.96); }
+        }
+        .animate-pulse-danger {
+            animation: pulse-danger 1.6s infinite ease-in-out;
+        }
+
+        /* Сильная тряска экрана при детонации */
+        @keyframes screen-shake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-18px, -14px) rotate(-1.5deg); }
+            20% { transform: translate(16px, 12px) rotate(1.5deg); }
+            30% { transform: translate(-14px, 16px) rotate(-1deg); }
+            40% { transform: translate(14px, -12px) rotate(1deg); }
+            50% { transform: translate(-10px, -8px) rotate(-0.8deg); }
+            60% { transform: translate(10px, 8px) rotate(0.8deg); }
+            70% { transform: translate(-6px, 6px) rotate(-0.4deg); }
+            80% { transform: translate(6px, -4px) rotate(0.4deg); }
+            90% { transform: translate(-3px, 2px) rotate(0deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+        .shake-active {
+            animation: screen-shake 0.75s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        /* Вспышка взрыва на весь экран */
+        #flash-overlay {
+            pointer-events: none;
+            opacity: 0;
+            background: radial-gradient(circle, #ffffff 0%, #fef08a 40%, #f97316 80%, #dc2626 100%);
+            transition: opacity 1.1s ease-out;
+        }
+        #flash-overlay.flash-boom {
+            opacity: 1;
+            transition: none;
+        }
+
+        /* Осколки интерфейса, которые разлетаются по физике */
+        .shatter-target {
+            will-change: transform, opacity;
+        }
+
+        /* Появление экрана после взрыва */
+        @keyframes fade-in-up {
+            from {
+                opacity: 0;
+                transform: translateY(24px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .animate-aftermath {
+            animation: fade-in-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen w-full flex flex-col items-center justify-center relative bg-zinc-950 selection:bg-red-600 selection:text-white">
+
+    <!-- Фоновая сетка и радиальное свечение -->
+    <div id="bg-grid" class="fixed inset-0 pointer-events-none opacity-25" 
+         style="background-image: radial-gradient(#3f3f46 1px, transparent 1px); background-size: 28px 28px;">
+    </div>
+    <div id="bg-glow" class="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(220,38,38,0.14)_0%,transparent_65%)]"></div>
+
+    <!-- Canvas для рендеринга взрыва: ударная волна, огонь, дым, искры и обломки -->
+    <canvas id="explosion-canvas" class="fixed inset-0 w-full h-full pointer-events-none z-30"></canvas>
+
+    <!-- Слой ослепляющей вспышки -->
+    <div id="flash-overlay" class="fixed inset-0 z-40"></div>
+
+    <!-- Главный игровой/аварийный контейнер (разлетается при нажатии) -->
+    <main id="main-stage" class="relative z-20 w-full max-w-2xl px-4 sm:px-6 flex flex-col items-center text-center">
+        
+        <!-- Верхняя аварийная плашка -->
+        <div class="shatter-target w-full max-w-md mb-6 rounded-xl overflow-hidden border border-zinc-700/80 bg-zinc-900/90 shadow-2xl backdrop-blur-sm">
+            <div class="hazard-stripes h-3 w-full"></div>
+            <div class="px-4 py-2.5 flex items-center justify-between text-xs sm:text-sm font-mono-tech text-zinc-400">
+                <span class="flex items-center gap-2 text-red-400 font-bold">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+                    СИСТЕМНЫЙ СБОЙ
+                </span>
+                <span>СЕКТОР: 404-NULL</span>
+            </div>
+        </div>
+
+        <!-- Огромный заголовок 404 -->
+        <div class="shatter-target relative mb-2">
+            <h1 class="text-8xl sm:text-9xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-zinc-200 to-zinc-600 drop-shadow-[0_10px_25px_rgba(0,0,0,0.9)]">
+                404
+            </h1>
+        </div>
+
+        <!-- Описание ошибки -->
+        <div class="shatter-target max-w-md mb-8 space-y-2">
+            <h2 class="text-xl sm:text-2xl font-extrabold text-zinc-100">
+                Страница потерялась в космосе
+            </h2>
+            <p class="text-sm sm:text-base text-zinc-400 leading-relaxed">
+                Запрошенный адрес не существует или был стёрт. Пожалуйста, вернитесь назад и <span class="text-red-400 font-semibold underline decoration-red-500/60">ни при каких обстоятельствах</span> не трогайте кнопку ниже.
+            </p>
+        </div>
+
+        <!-- Панель с большой красной кнопкой -->
+        <div class="shatter-target relative p-5 sm:p-7 rounded-3xl bg-zinc-900/95 border-2 border-zinc-800 shadow-[0_25px_60px_rgba(0,0,0,0.95)] flex flex-col items-center">
+            <!-- Декоративные болты по углам панели -->
+            <span class="absolute top-3 left-3 w-3 h-3 rounded-full bg-zinc-700 border border-zinc-600 shadow-inner"></span>
+            <span class="absolute top-3 right-3 w-3 h-3 rounded-full bg-zinc-700 border border-zinc-600 shadow-inner"></span>
+            <span class="absolute bottom-3 left-3 w-3 h-3 rounded-full bg-zinc-700 border border-zinc-600 shadow-inner"></span>
+            <span class="absolute bottom-3 right-3 w-3 h-3 rounded-full bg-zinc-700 border border-zinc-600 shadow-inner"></span>
+
+            <!-- Предупреждающая табличка -->
+            <div class="mb-5 px-4 py-1 rounded-md bg-yellow-500/10 border border-yellow-500/40 text-yellow-400 font-mono-tech text-xs sm:text-sm font-bold tracking-widest uppercase animate-pulse-danger">
+                ⚠️ ОПАСНО! САМОУНИЧТОЖЕНИЕ ⚠️
+            </div>
+
+            <!-- Гнездо кнопки -->
+            <div class="red-button-wrapper p-4 sm:p-5 rounded-full">
+                <button id="do-not-press-btn" 
+                        type="button"
+                        aria-label="Не нажимать"
+                        class="big-red-btn w-44 h-44 sm:w-52 sm:h-52 rounded-full flex flex-col items-center justify-center text-white font-black tracking-wider uppercase select-none focus:outline-none">
+                    <span class="text-2xl sm:text-3xl leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">НЕ</span>
+                    <span class="text-xl sm:text-2xl leading-tight mt-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">НАЖИМАТЬ</span>
+                </button>
+            </div>
+
+            <p id="temptation-hint" class="mt-5 text-xs font-mono-tech text-zinc-500 h-4 transition-colors duration-300">
+                Статус: система стабильна... пока что.
+            </p>
+        </div>
+
+        <!-- Безопасная ссылка возврата (до взрыва) -->
+        <div class="shatter-target mt-8">
+            <button id="safe-back-btn" type="button" 
+                    class="px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-sm font-medium border border-zinc-800 transition-all cursor-pointer">
+                ← Безопасно вернуться назад
+            </button>
+        </div>
+    </main>
+
+    <!-- Экран последствий после взрыва (изначально скрыт) -->
+    <section id="aftermath-screen" class="hidden fixed inset-0 z-30 flex flex-col items-center justify-center px-4 text-center pointer-events-auto">
+        <div class="animate-aftermath max-w-lg w-full p-6 sm:p-8 rounded-3xl bg-zinc-900/90 border border-zinc-800 shadow-[0_0_80px_rgba(0,0,0,0.95)] backdrop-blur-md">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 text-3xl mb-4">
+                💥
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-white mb-2">
+                Ну вот... Мы же просили!
+            </h2>
+            <p class="text-zinc-400 text-sm sm:text-base mb-6 leading-relaxed">
+                Вы нажали красную кнопку, и страница 404 полностью аннигилирована. От неё остались только пепел, дым и ваша совесть.
+            </p>
+            
+            <!-- Счетчик нажатий / статистика разрушений -->
+            <div class="mb-6 p-3.5 rounded-2xl bg-zinc-950/90 border border-zinc-800/90 font-mono-tech text-xs text-zinc-400 flex flex-col sm:flex-row items-center justify-around gap-2">
+                <span>УРОН: <strong class="text-red-400">9999%</strong></span>
+                <span class="hidden sm:inline text-zinc-700">|</span>
+                <span>ВЗРЫВОВ: <strong id="boom-counter" class="text-amber-400">1</strong></span>
+                <span class="hidden sm:inline text-zinc-700">|</span>
+                <span>СТАТУС: <strong class="text-zinc-300">РУИНЫ</strong></span>
+            </div>
+
+            <button id="restore-btn" type="button"
+                    class="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-zinc-950 font-extrabold text-sm sm:text-base shadow-[0_10px_25px_rgba(16,185,129,0.35)] hover:shadow-[0_14px_30px_rgba(16,185,129,0.5)] active:scale-95 transition-all cursor-pointer">
+                🔄 Восстановить страницу
+            </button>
+        </div>
+    </section>
+
+    <!-- Всплывающее уведомление для безопасной кнопки -->
+    <div id="toast-msg" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-zinc-800 border border-zinc-700 text-zinc-100 text-sm font-medium shadow-2xl opacity-0 pointer-events-none transition-all duration-300">
+        Мудрое решение! Но красная кнопка всё ещё манит...
+    </div>
+
+    <script>
+        /**
+         * Модуль генерации звука взрыва через Web Audio API
+         * Работает автономно без внешних аудиофайлов.
+         */
+        class ExplosionSoundEngine {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) {
+                        this.ctx = new AudioContext();
+                    }
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playExplosion() {
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+
+                    const now = this.ctx.currentTime;
+
+                    // 1. Низкочастотный саб-удар (ударная волна)
+                    const subOsc = this.ctx.createOscillator();
+                    const subGain = this.ctx.createGain();
+                    subOsc.type = 'sine';
+                    subOsc.frequency.setValueAtTime(140, now);
+                    subOsc.frequency.exponentialRampToValueAtTime(22, now + 0.9);
+
+                    subGain.gain.setValueAtTime(1.0, now);
+                    subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
+
+                    subOsc.connect(subGain);
+                    subGain.connect(this.ctx.destination);
+                    subOsc.start(now);
+                    subOsc.stop(now + 1.15);
+
+                    // 2. Взрывной рокот (белый/розовый шум через низкочастотный фильтр)
+                    const duration = 2.4;
+                    const bufferSize = this.ctx.sampleRate * duration;
+                    const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                    const output = noiseBuffer.getChannelData(0);
+
+                    let lastOut = 0.0;
+                    for (let i = 0; i < bufferSize; i++) {
+                        const white = Math.random() * 2 - 1;
+                        // Делаем более плотный, «взрывной» коричнево-розовый шум
+                        output[i] = (lastOut + (0.04 * white)) / 1.04;
+                        lastOut = output[i];
+                        output[i] *= 3.2; 
+                    }
+
+                    const noiseSource = this.ctx.createBufferSource();
+                    noiseSource.buffer = noiseBuffer;
+
+                    const filter = this.ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(1200, now);
+                    filter.frequency.exponentialRampToValueAtTime(95, now + duration);
+
+                    const noiseGain = this.ctx.createGain();
+                    noiseGain.gain.setValueAtTime(1.2, now);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                    noiseSource.connect(filter);
+                    filter.connect(noiseGain);
+                    noiseGain.connect(this.ctx.destination);
+
+                    noiseSource.start(now);
+                    noiseSource.stop(now + duration);
+
+                    // 3. Металлический треск / щелчок детонатора
+                    const crackOsc = this.ctx.createOscillator();
+                    const crackGain = this.ctx.createGain();
+                    crackOsc.type = 'sawtooth';
+                    crackOsc.frequency.setValueAtTime(420, now);
+                    crackOsc.frequency.exponentialRampToValueAtTime(45, now + 0.25);
+
+                    crackGain.gain.setValueAtTime(0.6, now);
+                    crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+                    crackOsc.connect(crackGain);
+                    crackGain.connect(this.ctx.destination);
+                    crackOsc.start(now);
+                    crackOsc.stop(now + 0.3);
+
+                } catch (e) {
+                    console.warn('Аудио движок недоступен:', e);
+                }
+            }
+
+            playRestore() {
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(260, now);
+                    osc.frequency.exponentialRampToValueAtTime(680, now + 0.35);
+
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.42);
+                } catch (e) {
+                    // Игнорируем ошибку звука при восстановлении
+                }
+            }
+        }
+
+        /**
+         * Система частиц на Canvas: ударная волна, огонь, дым, искры и металлические осколки
+         */
+        class ExplosionParticles {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.particles = [];
+                this.shockwaves = [];
+                this.smokePuffs = [];
+                this.animationId = null;
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+            }
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            trigger(originX, originY) {
+                // Создаем 2 ударные волны
+                this.shockwaves.push({
+                    x: originX,
+                    y: originY,
+                    radius: 10,
+                    maxRadius: Math.max(this.canvas.width, this.canvas.height) * 0.9,
+                    alpha: 0.95,
+                    lineWidth: 28,
+                    color: '255, 230, 150'
+                });
+                this.shockwaves.push({
+                    x: originX,
+                    y: originY,
+                    radius: 5,
+                    maxRadius: Math.max(this.canvas.width, this.canvas.height) * 0.65,
+                    alpha: 0.8,
+                    lineWidth: 14,
+                    color: '239, 68, 68'
+                });
+
+                // Огненные шары и раскаленные искры
+                const fireColors = ['#ffffff', '#fef08a', '#facc15', '#f97316', '#ef4444', '#b91c1c'];
+                for (let i = 0; i < 160; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 3 + Math.random() * 24;
+                    const isSpark = i % 3 === 0;
+                    this.particles.push({
+                        x: originX,
+                        y: originY,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed - (Math.random() * 4),
+                        size: isSpark ? (2 + Math.random() * 3) : (8 + Math.random() * 24),
+                        color: fireColors[Math.floor(Math.random() * fireColors.length)],
+                        alpha: 1,
+                        decay: isSpark ? (0.012 + Math.random() * 0.015) : (0.018 + Math.random() * 0.02),
+                        gravity: isSpark ? 0.35 : 0.12,
+                        drag: 0.96,
+                        isDebris: false
+                    });
+                }
+
+                // Твердые обломки корпуса и микросхем
+                const debrisColors = ['#27272a', '#3f3f46', '#dc2626', '#eab308', '#71717a'];
+                for (let i = 0; i < 65; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 6 + Math.random() * 22;
+                    this.particles.push({
+                        x: originX,
+                        y: originY,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed - 6,
+                        w: 6 + Math.random() * 14,
+                        h: 4 + Math.random() * 10,
+                        rotation: Math.random() * Math.PI * 2,
+                        vRot: (Math.random() - 0.5) * 0.35,
+                        color: debrisColors[Math.floor(Math.random() * debrisColors.length)],
+                        alpha: 1,
+                        decay: 0.008 + Math.random() * 0.007,
+                        gravity: 0.45,
+                        drag: 0.985,
+                        isDebris: true
+                    });
+                }
+
+                // Густой темный дым после взрыва
+                for (let i = 0; i < 55; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 1 + Math.random() * 9;
+                    this.smokePuffs.push({
+                        x: originX + (Math.random() - 0.5) * 60,
+                        y: originY + (Math.random() - 0.5) * 60,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed - (1 + Math.random() * 2.5),
+                        size: 35 + Math.random() * 65,
+                        grow: 0.6 + Math.random() * 0.9,
+                        alpha: 0.55 + Math.random() * 0.3,
+                        decay: 0.004 + Math.random() * 0.004
+                    });
+                }
+
+                if (!this.animationId) {
+                    this.loop();
+                }
+            }
+
+            clear() {
+                this.particles = [];
+                this.shockwaves = [];
+                this.smokePuffs = [];
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                    this.animationId = null;
+                }
+            }
+
+            loop() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // 1. Отрисовка дыма (задний слой взрыва)
+                for (let i = this.smokePuffs.length - 1; i >= 0; i--) {
+                    const s = this.smokePuffs[i];
+                    s.x += s.vx;
+                    s.y += s.vy;
+                    s.vx *= 0.97;
+                    s.vy *= 0.97;
+                    s.size += s.grow;
+                    s.alpha -= s.decay;
+
+                    if (s.alpha <= 0) {
+                        this.smokePuffs.splice(i, 1);
+                        continue;
+                    }
+
+                    const grad = this.ctx.createRadialGradient(s.x, s.y, s.size * 0.1, s.x, s.y, s.size);
+                    grad.addColorStop(0, `rgba(39, 39, 42, ${s.alpha})`);
+                    grad.addColorStop(1, `rgba(9, 9, 11, 0)`);
+
+                    this.ctx.fillStyle = grad;
+                    this.ctx.beginPath();
+                    this.ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+
+                // 2. Отрисовка ударных волн
+                for (let i = this.shockwaves.length - 1; i >= 0; i--) {
+                    const sw = this.shockwaves[i];
+                    sw.radius += (sw.maxRadius - sw.radius) * 0.14;
+                    sw.alpha -= 0.032;
+                    sw.lineWidth *= 0.94;
+
+                    if (sw.alpha <= 0) {
+                        this.shockwaves.splice(i, 1);
+                        continue;
+                    }
+
+                    this.ctx.strokeStyle = `rgba(${sw.color}, ${sw.alpha})`;
+                    this.ctx.lineWidth = Math.max(1, sw.lineWidth);
+                    this.ctx.beginPath();
+                    this.ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                }
+
+                // 3. Отрисовка огня, искр и осколков
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.vx *= p.drag;
+                    p.vy = p.vy * p.drag + p.gravity;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.alpha -= p.decay;
+
+                    if (p.alpha <= 0 || p.y > this.canvas.height + 100) {
+                        this.particles.splice(i, 1);
+                        continue;
+                    }
+
+                    this.ctx.save();
+                    this.ctx.globalAlpha = Math.max(0, p.alpha);
+
+                    if (p.isDebris) {
+                        p.rotation += p.vRot;
+                        this.ctx.translate(p.x, p.y);
+                        this.ctx.rotate(p.rotation);
+                        this.ctx.fillStyle = p.color;
+                        this.ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                    } else {
+                        this.ctx.fillStyle = p.color;
+                        this.ctx.beginPath();
+                        this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    }
+
+                    this.ctx.restore();
+                }
+
+                if (this.particles.length > 0 || this.shockwaves.length > 0 || this.smokePuffs.length > 0) {
+                    this.animationId = requestAnimationFrame(() => this.loop());
+                } else {
+                    this.animationId = null;
+                }
+            }
+        }
+
+        // Инициализация логики приложения после загрузки DOM
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('do-not-press-btn');
+            const safeBackBtn = document.getElementById('safe-back-btn');
+            const restoreBtn = document.getElementById('restore-btn');
+            const flashOverlay = document.getElementById('flash-overlay');
+            const mainStage = document.getElementById('main-stage');
+            const aftermathScreen = document.getElementById('aftermath-screen');
+            const shatterTargets = document.querySelectorAll('.shatter-target');
+            const temptationHint = document.getElementById('temptation-hint');
+            const toastMsg = document.getElementById('toast-msg');
+            const boomCounterEl = document.getElementById('boom-counter');
+            const canvas = document.getElementById('explosion-canvas');
+
+            const soundEngine = new ExplosionSoundEngine();
+            const particleSystem = new ExplosionParticles(canvas);
+
+            let isExploded = false;
+            let boomCount = 0;
+            let aftermathTimeout = null;
+
+            // Фразы-подсказки при наведении на кнопку
+            const hoverWarnings = [
+                'Эй! Убери курсор от кнопки!',
+                'Серьёзно, не надо этого делать...',
+                'Ты же видишь надпись «НЕ НАЖИМАТЬ»?!',
+                'Последнее предупреждение!',
+                'Система на грани детонации!'
+            ];
+
+            btn.addEventListener('mouseenter', () => {
+                if (isExploded) return;
+                const randomPhrase = hoverWarnings[Math.floor(Math.random() * hoverWarnings.length)];
+                temptationHint.textContent = randomPhrase;
+                temptationHint.classList.remove('text-zinc-500');
+                temptationHint.classList.add('text-red-400', 'font-bold');
+            });
+
+            btn.addEventListener('mouseleave', () => {
+                if (isExploded) return;
+                temptationHint.textContent = 'Статус: система стабильна... пока что.';
+                temptationHint.classList.remove('text-red-400', 'font-bold');
+                temptationHint.classList.add('text-zinc-500');
+            });
+
+            // Обработка «безопасной» кнопки
+            safeBackBtn.addEventListener('click', () => {
+                if (isExploded) return;
+                toastMsg.classList.remove('opacity-0');
+                toastMsg.classList.add('opacity-100', '-translate-y-1');
+                setTimeout(() => {
+                    toastMsg.classList.remove('opacity-100', '-translate-y-1');
+                    toastMsg.classList.add('opacity-0');
+                }, 2600);
+            });
+
+            // Главная функция детонации
+            function detonateEverything() {
+                if (isExploded) return;
+                isExploded = true;
+                boomCount += 1;
+                boomCounterEl.textContent = boomCount;
+
+                // Определяем координаты центра кнопки для эпицентра взрыва
+                const rect = btn.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+
+                // 1. Звук взрыва
+                soundEngine.playExplosion();
+
+                // 2. Вспышка на весь экран
+                flashOverlay.classList.add('flash-boom');
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        flashOverlay.classList.remove('flash-boom');
+                    });
+                });
+
+                // 3. Тряска экрана
+                document.body.classList.remove('shake-active');
+                void document.body.offsetWidth; // перезапуск CSS-анимации
+                document.body.classList.add('shake-active');
+
+                // 4. Частицы взрыва, огня, дыма и осколков
+                particleSystem.trigger(centerX, centerY);
+
+                // 5. Разлет DOM-элементов интерфейса в разные стороны
+                shatterTargets.forEach((el) => {
+                    const elRect = el.getBoundingClientRect();
+                    const elCenterX = elRect.left + elRect.width / 2;
+                    const elCenterY = elRect.top + elRect.height / 2;
+
+                    // Вектор от эпицентра взрыва к элементу
+                    let dx = elCenterX - centerX;
+                    let dy = elCenterY - centerY;
+                    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+                        dx = (Math.random() - 0.5) * 200;
+                        dy = -150;
+                    }
+
+                    const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.5;
+                    const force = 550 + Math.random() * 550;
+                    const throwX = Math.cos(angle) * force;
+                    const throwY = Math.sin(angle) * force + 320; // падение вниз под гравитацией
+                    const rotateDeg = (Math.random() - 0.5) * 720;
+
+                    el.style.transition = 'transform 1.15s cubic-bezier(0.22, 1, 0.36, 1), opacity 1.1s ease-in';
+                    el.style.transform = `translate3d(${throwX}px, ${throwY}px, 0) rotate(${rotateDeg}deg) scale(0.4)`;
+                    el.style.opacity = '0';
+                    el.style.pointerEvents = 'none';
+                });
+
+                // 6. Показ финального экрана последствий
+                aftermathTimeout = setTimeout(() => {
+                    mainStage.classList.add('pointer-events-none');
+                    aftermathScreen.classList.remove('hidden');
+                }, 1350);
+            }
+
+            // Функция восстановления страницы после взрыва
+            function restorePage() {
+                if (aftermathTimeout) {
+                    clearTimeout(aftermathTimeout);
+                }
+                soundEngine.playRestore();
+                particleSystem.clear();
+
+                aftermathScreen.classList.add('hidden');
+                document.body.classList.remove('shake-active');
+                mainStage.classList.remove('pointer-events-none');
+
+                // Возвращаем все разлетевшиеся блоки на место
+                shatterTargets.forEach((el) => {
+                    el.style.transition = 'transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.45s ease-out';
+                    el.style.transform = 'translate3d(0, 0, 0) rotate(0deg) scale(1)';
+                    el.style.opacity = '1';
+                    el.style.pointerEvents = 'auto';
+                });
+
+                temptationHint.textContent = 'Система восстановлена. Больше не нажимайте!';
+                temptationHint.classList.remove('text-red-400', 'font-bold');
+                temptationHint.classList.add('text-emerald-400');
+
+                setTimeout(() => {
+                    isExploded = false;
+                    shatterTargets.forEach((el) => {
+                        el.style.transition = '';
+                    });
+                }, 700);
+            }
+
+            // Привязка событий клика и касания
+            btn.addEventListener('click', detonateEverything);
+            restoreBtn.addEventListener('click', restorePage);
+        });
+    </script>
+</body>
+</html>
